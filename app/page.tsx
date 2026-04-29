@@ -186,7 +186,7 @@ export default function Home() {
           {isLoading && (
             <div className="mt-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700" />
-              <span className="text-sm font-medium">Dang san tim san pham tot nhat...</span>
+              <span className="text-sm font-medium">Finding best matches...</span>
             </div>
           )}
 
