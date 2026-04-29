@@ -13,12 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Amazon Winning Product Finder | SmartWorkHacks",
+  title: "AMZ Winning Product Finder | SmartWorkHacks",
   description: "Công cụ tìm kiếm sản phẩm Amazon tiềm năng",
   icons: {
     apple: "/apple-touch-icon.png",
     icon: [
+      { url: "/favicon.ico" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
     ],
   },
   manifest: "/site.webmanifest",
