@@ -33,7 +33,6 @@ export default function Home() {
         return;
       }
 
-      console.log("Search keyword:", trimmedKeyword);
       setIsLoading(true);
       setError("");
 
@@ -201,27 +200,123 @@ export default function Home() {
               {products.map((product) => (
                 <article
                   key={`${product.link}-${product.title}`}
-                  className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-md shadow-emerald-100/70 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg"
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-emerald-100/70 bg-white shadow-lg shadow-emerald-100/60 ring-1 ring-emerald-100/60 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-300/40 hover:ring-emerald-200"
                 >
-                  <Image
-                    src={product.image || "https://via.placeholder.com/400x300?text=No+Image"}
-                    alt={product.title}
-                    width={400}
-                    height={300}
-                    className="h-44 w-full object-cover"
-                  />
-                  <div className="space-y-3 p-4">
-                    <h3 className="line-clamp-2 min-h-12 text-sm font-semibold text-emerald-900">
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/0 via-emerald-400/0 to-teal-400/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-hover:from-emerald-400/10 group-hover:to-teal-400/10" />
+
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+                    <Image
+                      src={product.image || "https://via.placeholder.com/400x300?text=No+Image"}
+                      alt={product.title}
+                      width={400}
+                      height={300}
+                      className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-110"
+                    />
+
+                    <div className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 transition-all duration-700 ease-out group-hover:left-[120%] group-hover:opacity-100" />
+
+                    <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg shadow-orange-500/40">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                      </span>
+                      Top Pick
+                    </div>
+
+                    <button
+                      type="button"
+                      aria-label="Save to wishlist"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-emerald-600 shadow-md backdrop-blur-sm transition hover:scale-110 hover:bg-white hover:text-rose-500"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-3 p-4">
+                    <h3 className="line-clamp-2 min-h-[3rem] text-sm font-semibold leading-relaxed text-emerald-950 transition-colors group-hover:text-emerald-700">
                       {product.title}
                     </h3>
-                    <p className="text-xl font-bold text-emerald-700">{product.price}</p>
+
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-0.5 rounded-md bg-amber-50 px-2 py-1 ring-1 ring-amber-100"
+                        aria-label={`Rated ${product.rating.toFixed(1)} out of 5`}
+                      >
+                        {Array.from({ length: 5 }, (_, starIndex) => (
+                          <svg
+                            key={`${product.link}-star-${starIndex}`}
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            className={`h-3.5 w-3.5 ${
+                              starIndex < Math.round(product.rating)
+                                ? "fill-amber-400 text-amber-400"
+                                : "fill-transparent text-amber-200"
+                            }`}
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 2.5l2.95 5.97 6.59.96-4.77 4.65 1.13 6.57L12 17.55l-5.9 3.1 1.13-6.57L2.46 9.43l6.59-.96L12 2.5z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-xs font-semibold text-amber-700">
+                        {product.rating.toFixed(1)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs font-semibold text-emerald-600">
+                          {product.price.replace(/[\d.,]/g, "").trim() || "$"}
+                        </span>
+                        <span className="text-3xl font-black tracking-tight text-emerald-700">
+                          {product.price.replace(/[^\d.,]/g, "") || product.price}
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 ring-1 ring-sky-100">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="h-3 w-3"
+                        >
+                          <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+                        </svg>
+                        Prime
+                      </span>
+                    </div>
+
                     <a
                       href={product.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full rounded-lg bg-emerald-600 py-2 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      className="group/btn relative mt-1 inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 bg-[length:200%_100%] py-2.5 text-center text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-[position:100%_0] hover:shadow-xl hover:shadow-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-0"
                     >
-                      View on Amazon
+                      <span>View on Amazon</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1"
+                      >
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                      </svg>
                     </a>
                   </div>
                 </article>

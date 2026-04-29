@@ -31,6 +31,8 @@ function getPriceBounds(range: PriceRange) {
   }
 }
 
+const MAX_QUERY_LENGTH = 120;
+
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const priceRange = (request.nextUrl.searchParams.get("priceRange") ?? "all") as PriceRange;
@@ -39,6 +41,20 @@ export async function GET(request: NextRequest) {
 
   if (!query) {
     return NextResponse.json({ error: "Missing query parameter: q" }, { status: 400 });
+  }
+
+  if (query.length > MAX_QUERY_LENGTH) {
+    return NextResponse.json(
+      { error: `Query too long (max ${MAX_QUERY_LENGTH} characters)` },
+      { status: 400 }
+    );
+  }
+
+  if (Number.isNaN(minRating) || minRating < 0 || minRating > 5) {
+    return NextResponse.json(
+      { error: "Invalid minRating (must be a number between 0 and 5)" },
+      { status: 400 }
+    );
   }
 
   const apiKey = process.env.RAINFOREST_API_KEY;
@@ -70,6 +86,10 @@ export async function GET(request: NextRequest) {
   try {
     const response = await fetch(rainforestUrl.toString(), { cache: "no-store" });
     if (!response.ok) {
+      const bodyPreview = await response.text().catch(() => "");
+      console.error(
+        `[api/search] Rainforest API error: status=${response.status} q="${query}" body=${bodyPreview.slice(0, 200)}`
+      );
       return NextResponse.json(
         { error: "Rainforest API request failed" },
         { status: response.status }
@@ -114,7 +134,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ products });
-  } catch {
+  } catch (error) {
+    console.error(
+      `[api/search] Unexpected error: q="${query}" message=${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
     return NextResponse.json({ error: "Unexpected error while searching" }, { status: 500 });
   }
 }
