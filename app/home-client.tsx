@@ -1,5 +1,22 @@
 "use client";
 
+/**
+ * Bản ghi cài đặt / tính năng trang chủ (client)
+ *
+ * - Tìm kiếm: gọi `GET /api/search` với `q`, `priceRange`, `minRating`, `sortBy`; giới hạn query 120 ký tự.
+ * - URL & deep link: `?v=1|2` đổi headline/subtitle A/B; chế độ list `?s=…&type=list` (ưu tiên `s`, fallback `q`);
+ *   legacy `?q=…` khi không phải list; sau submit form gắn `s` + `type=list`, xóa `q`.
+ * - Theo dõi analytics (`./lib/analytics`): sau khi có kết quả, một lần mỗi lần load — `trackSearchEvent`,
+ *   `analyticsEvent("sw_search", …)` (gồm UTM từ URL, filter, `ab_variant`), click Amazon — `trackAmazonClick`;
+ *   waitlist — `analyticsEvent("sw_waitlist_submit", …)`.
+ * - Waitlist: POST JSON `{ email }` tới Make.com webhook `WAITLIST_WEBHOOK_URL` (scenario EU).
+ * - Loading UX: thanh tiến trình giả (rAF, cap 90%, fade); skeleton `ProductSkeleton` × 16; stagger hiện thẻ kết quả.
+ * - UI: affiliate disclosure, hero theo variant, filter giá/sao/sort, grid thẻ sản phẩm (Next/Image, badge, sao),
+ *   FAQ `FAQ_ITEMS`, mục How it works / Limitations (nhắc A/B và `/lp-a`, `/lp-b`).
+ *
+ * Phụ thuộc: `ProductSkeleton`, `analytics`, `COMPANY_DISPLAY_NAME` từ `./lib/site`.
+ */
+
 import Image from "next/image";
 import {
   FormEvent,
