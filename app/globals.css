@@ -1,5 +1,104 @@
 @import "tailwindcss";
 
+/* Shimmer: one ::after per block (fewer DOM nodes than nested divs). */
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  contain: paint;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(55%, 8rem);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.48),
+    transparent
+  );
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes finding-banner-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.finding-banner-text {
+  background-image: linear-gradient(
+    115deg,
+    #047857,
+    #0d9488,
+    #d97706,
+    #9333ea,
+    #0891b2,
+    #16a34a,
+    #047857
+  );
+  background-size: 260% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: finding-banner-gradient-shift 5s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finding-banner-text {
+    animation: none;
+    background-position: 0 50%;
+  }
+}
+
+@keyframes product-grid-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.product-grid-reveal-card {
+  animation-name: product-grid-reveal;
+  animation-duration: 0.52s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-grid-reveal-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
