@@ -26,10 +26,10 @@ const cardBase =
   "group overflow-hidden rounded-2xl border border-rose-100/90 bg-white/95 shadow-md shadow-rose-100/30 ring-1 ring-amber-50/50 transition duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-rose-200/50";
 
 const ctaAmazonClass =
-  "inline-flex w-full origin-center items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-400/35 transition duration-200 hover:scale-105 hover:from-orange-400 hover:to-amber-400 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2";
+  "inline-flex min-h-12 w-full origin-center items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-orange-400/35 transition duration-200 hover:scale-105 hover:from-orange-400 hover:to-amber-400 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2";
 
 const ctaBrowseClass =
-  "inline-flex w-full origin-center items-center justify-center rounded-xl border-2 border-amber-300/90 bg-gradient-to-b from-amber-50 to-white px-4 py-2.5 text-sm font-bold text-amber-950 shadow-sm transition duration-200 hover:scale-105 hover:border-orange-400 hover:bg-amber-100/80 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2";
+  "inline-flex min-h-12 w-full origin-center items-center justify-center rounded-xl border-2 border-amber-300/90 bg-gradient-to-b from-amber-50 to-white px-4 py-3 text-sm font-bold text-amber-950 shadow-sm transition duration-200 hover:scale-105 hover:border-orange-400 hover:bg-amber-100/80 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2";
 
 const AMAZON_REL = "noopener noreferrer";
 
@@ -174,14 +174,14 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
       <section id="gift-guide" className={sectionShell}>
         <div className="mb-6 border-b border-rose-100/80 pb-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">
-            Mother&apos;s Day 2026 · Category navigation
+            Mother&apos;s Day 2026
           </p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
             Mother&apos;s Day Gift Guide
           </h2>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((cat) => (
             <article
               key={cat.browseKey}
@@ -227,7 +227,7 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {topRated.map((product) => (
             <article
               key={product.priceHrefKey}
@@ -281,7 +281,7 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {bestSellers.map((item) => (
             <article
               key={item.priceHrefKey}

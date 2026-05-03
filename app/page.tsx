@@ -6,8 +6,8 @@ import {
 } from "./mothers-day-showcase";
 
 /**
- * Static Amazon affiliate search URLs: https://www.amazon.com/s?k=KEYWORDS&tag=anvopro-20
- * ASCII-only k= params (+ for word breaks). No leading/trailing whitespace in href strings.
+ * Mother's Day campaign: Amazon search-only links (no /dp ASINs). Format:
+ * https://www.amazon.com/s?k=Keyword+Keyword&tag=anvopro-20 — use + only in k= (no %20).
  */
 const MOTHERS_DAY_STATIC_LINKS: MothersDayStaticLinks = {
   browse: {
