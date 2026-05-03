@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
+import { applyAmazonAssociatesTag } from "@/app/lib/amazonAffiliateUrl";
 
 type RainforestSearchResult = {
   title?: string;
@@ -17,16 +18,14 @@ type RainforestSearchResult = {
 type PriceRange = "starter" | "mid" | "high" | "pro" | "all";
 type SortBy = "newest" | "price_asc" | "price_desc";
 
-/** Payload stored in Redis (minimal fields). Links must use this tag before cache write. */
-const AFFILIATE_TAG = "anvopro-20";
-
+/** Payload stored in Redis (minimal fields). Links must use Associates tag before cache write. */
 const CACHE_TTL_SECONDS = 60 * 60 * 24;
 const MAX_RESULTS = 16;
 /** Ask Rainforest for enough rows so filtering (rating, price band) still yields up to MAX_RESULTS. */
 const RAINFOREST_NUMBER_OF_RESULTS = 48;
 const MAX_QUERY_LENGTH = 120;
 /** Bump when affiliate / link shape changes so Redis does not serve stale tags. */
-const CACHE_KEY_PREFIX = "amazon-finder:search:v3";
+const CACHE_KEY_PREFIX = "amazon-finder:search:v4";
 
 type CachedProduct = {
   title: string;
@@ -55,23 +54,13 @@ function buildCacheKey(
   return `${CACHE_KEY_PREFIX}:${normalized}:${priceRange}:${minRating}:${sortBy}`;
 }
 
-function attachAffiliateTag(rawLink: string): string {
-  try {
-    const url = new URL(rawLink, "https://www.amazon.com");
-    url.searchParams.set("tag", AFFILIATE_TAG);
-    return url.toString();
-  } catch {
-    return rawLink;
-  }
-}
-
 /** Every outbound listing URL must carry Associates tag before JSON or cache write. */
 function normalizeProductLink(link: string): string {
   const trimmed = link.trim();
   if (!trimmed || trimmed === "#") {
     return "#";
   }
-  return attachAffiliateTag(trimmed);
+  return applyAmazonAssociatesTag(trimmed);
 }
 
 function parsePriceValue(price: string): number {

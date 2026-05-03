@@ -1,36 +1,23 @@
 "use client";
 
 /**
- * Affiliate link safety net: ensure outbound Amazon-family links carry tag=anvopro-20
- * (covers dynamically injected anchors, e.g. after search). Server-rendered links are
- * already tagged; this avoids missing edge cases without rescanning the whole DOM on
- * every React update.
+ * Client safety net: re-apply Associates tag after hydration (incl. sspa/sponsored URLs).
+ * Server/API use the same logic in `@/app/lib/amazonAffiliateUrl`.
  */
 
 import { useEffect } from "react";
-
-const AFFILIATE_ID = "anvopro-20";
-const TARGET_DOMAINS = ["amazon.com", "amzn.to", "amazon.de"] as const;
+import { applyAmazonAssociatesTag } from "@/app/lib/amazonAffiliateUrl";
 
 function tagAnchor(link: HTMLAnchorElement) {
+  const href = link.getAttribute("href");
+  if (!href || href.startsWith("#") || href.startsWith("javascript:")) {
+    return;
+  }
   try {
-    const href = link.getAttribute("href");
-    if (!href || href.startsWith("#") || href.startsWith("javascript:")) {
-      return;
-    }
-    const url = new URL(link.href);
-    if (!TARGET_DOMAINS.some((domain) => url.hostname.includes(domain))) {
-      return;
-    }
-    const params = new URLSearchParams(url.search);
-    if (params.get("tag") === AFFILIATE_ID) {
-      return;
-    }
-    params.set("tag", AFFILIATE_ID);
-    url.search = params.toString();
-    link.href = url.toString();
+    const next = applyAmazonAssociatesTag(link.href);
+    link.href = next;
   } catch {
-    /* invalid or opaque URL */
+    /* invalid URL */
   }
 }
 
