@@ -1,11 +1,23 @@
 import Image from "next/image";
 
-const AFFILIATE_TAG = "anvopro-20";
-
-/** Required affiliate URL shape: https://www.amazon.com/dp/{ASIN}/?tag=anvopro-20 */
-function amazonDp(asin: string): string {
-  return `https://www.amazon.com/dp/${asin}/?tag=${AFFILIATE_TAG}`;
-}
+export type MothersDayStaticLinks = {
+  browse: {
+    techMom: string;
+    wellnessMom: string;
+    homeChef: string;
+    jewelryTimeless: string;
+  };
+  checkPriceTopRated: {
+    kindle: string;
+    photoFrame: string;
+    robotVacuum: string;
+  };
+  checkPriceBestSellers: {
+    spaGiftBasket: string;
+    silkPillowcase: string;
+    smartEspresso: string;
+  };
+};
 
 const sectionShell =
   "scroll-mt-28 rounded-2xl border border-rose-100/80 bg-gradient-to-br from-white via-rose-50/30 to-amber-50/40 p-5 shadow-lg shadow-rose-100/40 ring-1 ring-amber-100/60 md:p-8";
@@ -18,6 +30,8 @@ const ctaAmazonClass =
 
 const ctaBrowseClass =
   "inline-flex w-full origin-center items-center justify-center rounded-xl border-2 border-amber-300/90 bg-gradient-to-b from-amber-50 to-white px-4 py-2.5 text-sm font-bold text-amber-950 shadow-sm transition duration-200 hover:scale-105 hover:border-orange-400 hover:bg-amber-100/80 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2";
+
+const AMAZON_REL = "noopener noreferrer";
 
 function StarRating({ value, label }: { value: number; label: string }) {
   const filledCount = Math.min(5, Math.round(value));
@@ -44,43 +58,43 @@ function StarRating({ value, label }: { value: number; label: string }) {
           );
         })}
       </div>
-      <span className="text-sm font-bold text-amber-900">
-        {value.toFixed(1)}/5
-      </span>
+      <span className="text-sm font-bold text-amber-900">{value.toFixed(1)}/5</span>
     </div>
   );
 }
 
-const AMAZON_REL = "noopener noreferrer sponsored nofollow";
-
 const categories = [
   {
     title: "Tech Mom",
-    asin: "B09TMN58V6",
+    browseKey: "techMom" as const,
+    blurb: "Gadgets she will reach for every single day.",
     image:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
     alt: "Tech gadgets and devices for mom",
   },
   {
     title: "Wellness Mom",
-    asin: "B082VZMBSV",
+    browseKey: "wellnessMom" as const,
+    blurb: "Restore, recharge, and feel genuinely cared for.",
     image:
       "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80",
     alt: "Wellness and self-care essentials",
   },
   {
     title: "Home Chef",
-    asin: "B08PC3PG9S",
+    browseKey: "homeChef" as const,
+    blurb: "Kitchen upgrades that make cooking feel effortless.",
     image:
       "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
     alt: "Kitchen tools and cooking inspiration",
   },
   {
-    title: "Luxury Mom",
-    asin: "B071G6S5Y6",
+    title: "Jewelry & Timeless Gifts",
+    browseKey: "jewelryTimeless" as const,
+    blurb: "Elegant pieces that make her shine every day.",
     image:
-      "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=800&q=80",
-    alt: "Luxury gifts and refined accessories",
+      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80",
+    alt: "Fine jewelry and timeless gift ideas",
   },
 ] as const;
 
@@ -89,7 +103,7 @@ const topRated = [
     title: "Kindle Paperwhite (2026)",
     rating: 4.8,
     highlights: ["Waterproof", "10-week battery"],
-    asin: "B0DN8ZYH9R",
+    priceHrefKey: "kindle" as const,
     image:
       "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
     alt: "E-reader and reading lifestyle",
@@ -98,7 +112,7 @@ const topRated = [
     title: "Digital Photo Frame (10-inch)",
     rating: 4.7,
     highlights: ["Instant Wi-Fi sharing", "HD Touchscreen"],
-    asin: "B098TK48Q8",
+    priceHrefKey: "photoFrame" as const,
     image:
       "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80",
     alt: "Digital photo frame on a shelf",
@@ -107,7 +121,7 @@ const topRated = [
     title: "Robot Vacuum (Ultra Slim)",
     rating: 4.6,
     highlights: ["Self-emptying", "Pet hair expert"],
-    asin: "B094NYPMNK",
+    priceHrefKey: "robotVacuum" as const,
     image:
       "https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=800&q=80",
     alt: "Robot vacuum on hardwood floor",
@@ -117,16 +131,18 @@ const topRated = [
 const bestSellers = [
   {
     badge: "Best Seller" as const,
-    title: "Massage Gun",
-    asin: "B08PZDYPJ4",
+    title: "Luxury Spa Gift Basket",
+    blurb: "Spa-night essentials she can unwrap tonight.",
+    priceHrefKey: "spaGiftBasket" as const,
     image:
-      "https://images.unsplash.com/photo-1600494603989-9650cf6ddd3d?auto=format&fit=crop&w=800&q=80",
-    alt: "Massage gun for muscle recovery",
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
+    alt: "Spa setting with candles and relaxation essentials",
   },
   {
     badge: "Mom's Favorite" as const,
     title: "Mulberry Silk Pillowcase",
-    asin: "B00LWKBTD8",
+    blurb: "The ultimate beauty sleep essential for Mom.",
+    priceHrefKey: "silkPillowcase" as const,
     image:
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
     alt: "Silk bedding and pillowcase",
@@ -134,9 +150,10 @@ const bestSellers = [
   {
     badge: "Limited Deal" as const,
     title: "Smart Espresso Machine",
-    asin: "B095GX3SQ2",
+    blurb: "Café-quality pours without leaving home.",
+    priceHrefKey: "smartEspresso" as const,
     image:
-      "https://images.unsplash.com/photo-1517668808823-f9f70913fc87?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80",
     alt: "Espresso machine on kitchen counter",
   },
 ] as const;
@@ -151,7 +168,7 @@ function badgeClass(badge: (typeof bestSellers)[number]["badge"]) {
   return "bg-gradient-to-r from-emerald-600 to-teal-600 text-white";
 }
 
-export function MothersDayCampaignShowcase() {
+export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticLinks }) {
   return (
     <div className="space-y-10 md:space-y-12">
       <section id="gift-guide" className={sectionShell}>
@@ -162,15 +179,12 @@ export function MothersDayCampaignShowcase() {
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
             Mother&apos;s Day Gift Guide
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-emerald-800 md:text-base">
-            Four premium lanes—each button opens the curated Amazon listing with our associate tag.
-          </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((cat) => (
             <article
-              key={cat.asin}
+              key={cat.browseKey}
               className={`${cardBase} flex flex-col bg-gradient-to-b from-white to-rose-50/40`}
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-rose-50">
@@ -188,9 +202,9 @@ export function MothersDayCampaignShowcase() {
               </div>
               <div className="flex flex-1 flex-col gap-3 p-4 md:p-5">
                 <h3 className="text-lg font-bold tracking-tight text-emerald-950">{cat.title}</h3>
-                <p className="text-xs text-emerald-700">Featured pick · ASIN {cat.asin}</p>
+                <p className="text-sm leading-relaxed text-emerald-800">{cat.blurb}</p>
                 <a
-                  href={amazonDp(cat.asin)}
+                  href={links.browse[cat.browseKey]}
                   target="_blank"
                   rel={AMAZON_REL}
                   className={`${ctaBrowseClass} mt-auto`}
@@ -211,15 +225,12 @@ export function MothersDayCampaignShowcase() {
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
             Top Rated Products 2026
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-emerald-800 md:text-base">
-            Three standout categories with strong shopper ratings—verify the latest price on Amazon.
-          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
           {topRated.map((product) => (
             <article
-              key={product.asin}
+              key={product.priceHrefKey}
               className={`${cardBase} flex flex-col bg-gradient-to-b from-white to-amber-50/30`}
             >
               <div className="relative aspect-[5/4] w-full overflow-hidden bg-gradient-to-br from-amber-50 to-rose-50 md:aspect-square">
@@ -245,7 +256,7 @@ export function MothersDayCampaignShowcase() {
                   </ul>
                 </div>
                 <a
-                  href={amazonDp(product.asin)}
+                  href={links.checkPriceTopRated[product.priceHrefKey]}
                   target="_blank"
                   rel={AMAZON_REL}
                   className={`${ctaAmazonClass} mt-auto`}
@@ -267,16 +278,13 @@ export function MothersDayCampaignShowcase() {
             <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
               Best Sellers for Mom
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-emerald-800 md:text-base">
-              Momentum picks with clear badges—tap through for today&apos;s Amazon price.
-            </p>
           </div>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {bestSellers.map((item) => (
             <article
-              key={item.asin}
+              key={item.priceHrefKey}
               className={`${cardBase} flex flex-col bg-gradient-to-b from-white to-rose-50/35`}
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-rose-50 to-amber-50">
@@ -297,8 +305,9 @@ export function MothersDayCampaignShowcase() {
                 <h3 className="text-base font-semibold leading-snug text-emerald-950 md:text-lg">
                   {item.title}
                 </h3>
+                <p className="text-sm leading-relaxed text-emerald-800">{item.blurb}</p>
                 <a
-                  href={amazonDp(item.asin)}
+                  href={links.checkPriceBestSellers[item.priceHrefKey]}
                   target="_blank"
                   rel={AMAZON_REL}
                   className={`${ctaAmazonClass} mt-auto`}
@@ -311,17 +320,12 @@ export function MothersDayCampaignShowcase() {
         </div>
       </section>
 
-      <div
-        className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-4 text-center shadow-sm md:px-6"
+      <p
+        className="border-t border-emerald-100/90 pt-8 text-center text-xs leading-relaxed text-emerald-700/80 md:text-sm"
         role="note"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-          Affiliate Disclosure
-        </p>
-        <p className="mt-2 text-sm font-medium text-emerald-900 md:text-base">
-          As an Amazon Associate, we earn from qualifying purchases.
-        </p>
-      </div>
+        As an Amazon Associate, we earn from qualifying purchases.
+      </p>
     </div>
   );
 }
