@@ -700,7 +700,7 @@ export default function HomeClient({ campaignSections }: { campaignSections: Rea
                     <a
                       href={product.link}
                       target="_blank"
-                      rel="noopener noreferrer sponsored"
+                      rel="noopener noreferrer"
                       onClick={() =>
                         trackAmazonClick({
                           product_name: product.title,
