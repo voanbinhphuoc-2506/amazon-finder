@@ -25,7 +25,8 @@ const MAX_RESULTS = 16;
 /** Ask Rainforest for enough rows so filtering (rating, price band) still yields up to MAX_RESULTS. */
 const RAINFOREST_NUMBER_OF_RESULTS = 48;
 const MAX_QUERY_LENGTH = 120;
-const CACHE_KEY_PREFIX = "amazon-finder:search:v2";
+/** Bump when affiliate / link shape changes so Redis does not serve stale tags. */
+const CACHE_KEY_PREFIX = "amazon-finder:search:v3";
 
 type CachedProduct = {
   title: string;
@@ -62,6 +63,15 @@ function attachAffiliateTag(rawLink: string): string {
   } catch {
     return rawLink;
   }
+}
+
+/** Every outbound listing URL must carry Associates tag before JSON or cache write. */
+function normalizeProductLink(link: string): string {
+  const trimmed = link.trim();
+  if (!trimmed || trimmed === "#") {
+    return "#";
+  }
+  return attachAffiliateTag(trimmed);
 }
 
 function parsePriceValue(price: string): number {
@@ -113,7 +123,7 @@ function cachedRowsToResponseProducts(rows: CachedProduct[]) {
     price: p.price,
     image: p.image,
     rating: p.rating,
-    link: p.link,
+    link: normalizeProductLink(p.link),
     priceValue: parsePriceValue(p.price),
   }));
 }
@@ -218,7 +228,7 @@ export async function GET(request: NextRequest) {
       .filter((item) => item.title && item.link)
       .map((item) => ({
         title: item.title ?? "Untitled Product",
-        link: item.link ? attachAffiliateTag(item.link) : "#",
+        link: item.link ? normalizeProductLink(item.link) : "#",
         image: item.image ?? item.thumbnail ?? "",
         priceValue:
           typeof item.price?.value === "number"
@@ -253,7 +263,7 @@ export async function GET(request: NextRequest) {
       price: p.price,
       image: p.image,
       rating: p.rating,
-      link: p.link,
+      link: normalizeProductLink(p.link),
     }));
 
     if (redis && toCache.length > 0) {
@@ -272,7 +282,7 @@ export async function GET(request: NextRequest) {
       price: p.price,
       image: p.image,
       rating: p.rating,
-      link: p.link,
+      link: normalizeProductLink(p.link),
       priceValue: p.priceValue,
     }));
 
