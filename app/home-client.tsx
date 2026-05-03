@@ -527,6 +527,44 @@ export default function HomeClient() {
           </div>
         </section>
 
+        <section
+          id="best-sellers"
+          className="scroll-mt-[100px] rounded-3xl border border-emerald-200 bg-white/85 p-6 shadow-lg shadow-emerald-100 backdrop-blur-sm md:p-8"
+        >
+          <h2 className="text-xl font-semibold text-emerald-900 md:text-2xl">
+            Best Sellers for Mom
+          </h2>
+          <p className="mt-3 text-sm text-emerald-800 md:text-base">
+            Curated picks shoppers often choose for Mother&apos;s Day—run a search above to see live
+            listings, then confirm price and availability on Amazon.
+          </p>
+        </section>
+
+        <section
+          id="gift-guide"
+          className="scroll-mt-[100px] rounded-3xl border border-emerald-200 bg-white/85 p-6 shadow-lg shadow-emerald-100 backdrop-blur-sm md:p-8"
+        >
+          <h2 className="text-xl font-semibold text-emerald-900 md:text-2xl">
+            Mother&apos;s Day Gift Guide
+          </h2>
+          <p className="mt-3 text-sm text-emerald-800 md:text-base">
+            Use price and rating filters with your keywords to narrow ideas by budget and quality
+            signals before you buy.
+          </p>
+        </section>
+
+        <section
+          id="top-rated"
+          className="scroll-mt-[100px] rounded-3xl border border-emerald-200 bg-white/85 p-6 shadow-lg shadow-emerald-100 backdrop-blur-sm md:p-8"
+        >
+          <h2 className="text-xl font-semibold text-emerald-900 md:text-2xl">
+            Top Rated Products 2026
+          </h2>
+          <p className="mt-3 text-sm text-emerald-800 md:text-base">
+            Sort by rating filters and open listings to verify reviews and details for this season.
+          </p>
+        </section>
+
         <section>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-emerald-900 md:text-2xl">
