@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { AffiliateLinkAutomator } from "./components/AffiliateLinkAutomator";
 import { CookieConsent } from "./components/CookieConsent";
 import { OrganizationJsonLd } from "./components/OrganizationJsonLd";
 import { SiteFooter } from "./components/SiteFooter";
@@ -112,6 +113,7 @@ export default function RootLayout({
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         <SiteFooter />
         <CookieConsent />
+        <AffiliateLinkAutomator />
       </body>
     </html>
   );
