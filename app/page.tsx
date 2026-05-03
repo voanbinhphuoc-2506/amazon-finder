@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import HomeClient from "./home-client";
+import { MothersDayCampaignShowcase } from "./mothers-day-showcase";
 
 export default function HomePage() {
   return (
     <Suspense fallback={<HomeFallback />}>
-      <HomeClient />
+      <HomeClient campaignSections={<MothersDayCampaignShowcase />} />
     </Suspense>
   );
 }
