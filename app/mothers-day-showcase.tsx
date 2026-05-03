@@ -33,6 +33,11 @@ const ctaBrowseClass =
 
 const AMAZON_REL = "noopener noreferrer";
 
+/** Intrinsic dimensions for next/image (4:3 cards). */
+const IMG_4_3 = { width: 800, height: 600 } as const;
+/** Spotlight cards: square crop for stable CLS. */
+const IMG_SQUARE = { width: 800, height: 800 } as const;
+
 function StarRating({ value, label }: { value: number; label: string }) {
   const filledCount = Math.min(5, Math.round(value));
   return (
@@ -182,22 +187,21 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((cat) => (
+          {categories.map((cat, index) => (
             <article
               key={cat.browseKey}
               className={`${cardBase} flex flex-col bg-gradient-to-b from-white to-rose-50/40`}
             >
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-rose-50">
+              <div className="relative isolate aspect-[4/3] w-full overflow-hidden bg-rose-50 before:pointer-events-none before:absolute before:inset-0 before:z-10 before:bg-gradient-to-t before:from-rose-950/30 before:via-transparent before:to-amber-50/10">
                 <Image
                   src={cat.image}
                   alt={cat.alt}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  width={IMG_4_3.width}
+                  height={IMG_4_3.height}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-rose-950/30 via-transparent to-amber-50/10"
-                  aria-hidden
+                  priority={index === 0}
+                  loading={index === 0 ? undefined : "lazy"}
+                  className="relative z-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
               <div className="flex flex-1 flex-col gap-3 p-4 md:p-5">
@@ -237,9 +241,11 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
                 <Image
                   src={product.image}
                   alt={product.alt}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  width={IMG_SQUARE.width}
+                  height={IMG_SQUARE.height}
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  loading="lazy"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
               <div className="flex flex-1 flex-col gap-3 p-4 md:p-5">
@@ -270,15 +276,13 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
       </section>
 
       <section id="best-sellers" className={sectionShell}>
-        <div className="mb-6 flex flex-col gap-2 border-b border-rose-100/80 pb-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">
-              The hot list
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
-              Best Sellers for Mom
-            </h2>
-          </div>
+        <div className="mb-6 border-b border-rose-100/80 pb-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">
+            The hot list
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-emerald-950 md:text-3xl">
+            Best Sellers for Mom
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -291,9 +295,11 @@ export function MothersDayCampaignShowcase({ links }: { links: MothersDayStaticL
                 <Image
                   src={item.image}
                   alt={item.alt}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  width={IMG_4_3.width}
+                  height={IMG_4_3.height}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  loading="lazy"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
                 <span
                   className={`absolute left-3 top-3 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide shadow-md ${badgeClass(item.badge)}`}

@@ -615,7 +615,8 @@ export default function HomeClient({ campaignSections }: { campaignSections: Rea
                       width={400}
                       height={300}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      loading="lazy"
+                      priority={index === 0}
+                      loading={index === 0 ? undefined : "lazy"}
                       className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-110"
                     />
 

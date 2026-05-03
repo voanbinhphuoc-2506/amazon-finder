@@ -27,29 +27,14 @@ function AnalyticsScripts() {
 
   return (
     <>
-      {gtmId ? (
-        <Script id="gtm-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({'gtm.start': Date.now(), event:'gtm.js'});
-          `}
-        </Script>
-      ) : null}
-      {gtmId ? (
-        <Script
-          id="gtm-script"
-          src={`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`}
-          strategy="afterInteractive"
-        />
-      ) : null}
       {!gtmId && gaId ? (
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       ) : null}
       {!gtmId && gaId ? (
-        <Script id="ga4-config" strategy="afterInteractive">
+        <Script id="ga4-config" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -60,7 +45,7 @@ function AnalyticsScripts() {
         </Script>
       ) : null}
       {clarityId ? (
-        <Script id="ms-clarity" strategy="afterInteractive">
+        <Script id="ms-clarity" strategy="lazyOnload">
           {`
             (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

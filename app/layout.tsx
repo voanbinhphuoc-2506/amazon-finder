@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { CookieConsent } from "./components/CookieConsent";
 import { OrganizationJsonLd } from "./components/OrganizationJsonLd";
 import { SiteFooter } from "./components/SiteFooter";
@@ -10,11 +11,13 @@ import { COMPANY_DISPLAY_NAME, getSiteUrl } from "./lib/site";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const siteUrl = getSiteUrl();
@@ -85,16 +88,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
+      <body className="min-h-full flex flex-col">
         {gtmId !== null ? (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: gtmScriptInnerHtml,
-            }}
+          <Script
+            id="google-tag-manager"
+            strategy="lazyOnload"
+            dangerouslySetInnerHTML={{ __html: gtmScriptInnerHtml }}
           />
         ) : null}
-      </head>
-      <body className="min-h-full flex flex-col">
         {gtmId !== null ? (
           <noscript>
             <iframe
