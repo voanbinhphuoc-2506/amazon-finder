@@ -311,12 +311,17 @@ export function MothersDayCampaignShowcase() {
         </div>
       </section>
 
-      <p
-        className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-3 text-center text-sm font-medium text-emerald-900 shadow-sm md:text-base"
+      <div
+        className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-4 text-center shadow-sm md:px-6"
         role="note"
       >
-        Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases.
-      </p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+          Affiliate Disclosure
+        </p>
+        <p className="mt-2 text-sm font-medium text-emerald-900 md:text-base">
+          As an Amazon Associate, we earn from qualifying purchases.
+        </p>
+      </div>
     </div>
   );
 }
