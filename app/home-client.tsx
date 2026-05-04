@@ -380,6 +380,23 @@ export default function HomeClient({ campaignSections }: { campaignSections: Rea
     };
   }, [pathname]);
 
+  /** List-mode deep links (`?type=list`): scroll to results so campaign landings surface the grid. */
+  useEffect(() => {
+    if (pathname !== "/" || !urlTypeIsList) {
+      return;
+    }
+    const scrollToMarketplaceResults = () => {
+      document
+        .getElementById("marketplace-results")
+        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+    };
+    scrollToMarketplaceResults();
+    const t = window.setTimeout(scrollToMarketplaceResults, 0);
+    return () => {
+      window.clearTimeout(t);
+    };
+  }, [pathname, urlTypeIsList, searchParams]);
+
   const submitWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = waitlistEmail.trim().toLowerCase();
@@ -551,9 +568,12 @@ export default function HomeClient({ campaignSections }: { campaignSections: Rea
 
         {campaignSections}
 
-        <section>
+        <section id="marketplace-results" aria-labelledby="marketplace-results-heading">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-emerald-900 md:text-2xl">
+            <h2
+              id="marketplace-results-heading"
+              className="text-xl font-semibold text-emerald-900 md:text-2xl"
+            >
               Marketplace results
             </h2>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
