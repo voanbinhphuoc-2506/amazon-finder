@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { buildAmazonImmortalDpUrl } from "@/app/lib/landingAdsCatalog";
 import {
   LANDING_GRID_SLOTS,
   type LandingCatalogProduct,
@@ -84,7 +85,7 @@ export default function LandingProductGrid({
                 </h3>
                 <p className="text-sm font-bold text-emerald-800">{slot.price}</p>
                 <a
-                  href={slot.link}
+                  href={buildAmazonImmortalDpUrl(slot.asin)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
@@ -97,7 +98,7 @@ export default function LandingProductGrid({
                   }
                   className="mt-auto inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2.5 text-center text-sm font-bold text-white shadow-md shadow-orange-400/30 transition hover:scale-[1.02] hover:from-orange-400 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
                 >
-                  View listing
+                  View on Amazon
                 </a>
               </div>
             </article>

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Tìm kiếm Amazon qua Rainforest API cho một danh sách từ khóa, lọc theo:
+Tìm kiếm Amazon qua Rainforest API — 5 từ khóa cố định, mỗi danh mục đúng 16 SKU (Rainforest max_page + lấp từ pool campaign nếu thiếu).
+
+Lọc:
   - Còn hàng (buybox availability type = in_stock)
-  - Ngày giao: chấp nhận đến hết ngày deadline (mặc định 10/05/2026 — Mother's Day);
-    loại nếu ngày giao sớm nhất SAU deadline (tức từ 11/05/2026 trở đi với deadline 10/05).
-  - Đánh giá > 4.5 sao
-  - Ghi tối đa N sản phẩm (mặc định 16) vào data/products.json để Next.js đọc (tiết kiệm credit khi dùng --cache-hours).
+  - Rating >= min_rating (mặc định 4.0)
+  - Chỉ Prime (is_prime)
+  - Ngày giao sớm nhất on/before --delivery-cutoff (mặc định 10/05/2026 → giữ nếu earliest <= 2026-05-10)
+
+Lưu data/products.json với categories[] (theo từ khóa) + products[] (gộp phẳng, ASIN không trùng).
 
 Yêu cầu API key:
   export RAINFOREST_API_KEY=...
   (tuỳ chọn) export AMAZON_ASSOCIATE_TAG=anvopro-20
 
-Chi phí tín dụng: mỗi lần refresh = (số từ khóa) × (1 + include_products_count), trừ khi bỏ qua nhờ cache file.
+Chi phí: ~5 × (1 + include_products_count) credit mỗi lần refresh (trừ cache file).
 """
 
 from __future__ import annotations
@@ -45,6 +48,8 @@ except ImportError:
 
 RAINFOREST_URL = "https://api.rainforestapi.com/request"
 DEFAULT_PRODUCTS_JSON = REPO_ROOT / "data" / "products.json"
+# Link trong JSON luôn /dp/{asin}?tag=... — không dùng URL listing từ API.
+CANONICAL_ASSOCIATE_TAG = "anvopro-20"
 
 
 def _ensure_utf8_stdio() -> None:
@@ -59,12 +64,21 @@ def _ensure_utf8_stdio() -> None:
                 pass
 
 DEFAULT_KEYWORDS = [
-    "Kindle Paperwhite",
-    "Espresso Machine",
-    "Robot Vacuum",
-    "Fitness Tracker",
-    "Massage Gun",
+    "fitness tracker",
+    "massage gun",
+    "espresso machine",
+    "robot vacuum",
+    "kindle paperwhite",
 ]
+
+
+def keyword_slug(keyword: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", keyword.strip().lower()).strip("-")
+
+
+def _redact_api_key_in_text(text: str) -> str:
+    """Tránh in full api_key ra stderr/log khi URL lỗi."""
+    return re.sub(r"api_key=[^&\s]+", "api_key=***", text, flags=re.IGNORECASE)
 
 
 def _parse_iso_or_none(s: str | None) -> date | None:
@@ -258,12 +272,10 @@ def product_image(product: dict[str, Any], hit: dict[str, Any]) -> str:
     return ""
 
 
-def listing_product_url(asin: str, associate_tag: str | None) -> str:
-    """URL listing chuẩn amazon.com/dp (cho landing & JSON)."""
-    base = f"https://www.amazon.com/dp/{asin}"
-    if associate_tag:
-        return f"{base}?{urlencode({'tag': associate_tag})}"
-    return base
+def canonical_dp_url(asin: str) -> str:
+    """Chỉ tạo link từ ASIN + tag cố định (tránh 404 từ URL API)."""
+    a = asin.strip()
+    return f"https://www.amazon.com/dp/{a}?{urlencode({'tag': CANONICAL_ASSOCIATE_TAG})}"
 
 
 def short_product_url(asin: str, associate_tag: str | None) -> str:
@@ -296,7 +308,10 @@ def fetch_search_with_products(
     include_products_count: int,
     associate_id: str | None,
     extra_params: dict[str, str],
+    *,
+    page: int = 1,
 ) -> dict[str, Any]:
+    """Một trang search. Không gửi max_page cùng include_products_count — API Rainforest trả 400."""
     params: dict[str, str | int] = {
         "api_key": api_key,
         "type": "search",
@@ -309,34 +324,24 @@ def fetch_search_with_products(
     }
     if associate_id:
         params["associate_id"] = associate_id
+    if page > 1:
+        params["page"] = page
     params.update(extra_params)
     r = requests.get(RAINFOREST_URL, params=params, timeout=120)
     r.raise_for_status()
     return r.json()
 
 
-def process_keyword(
+def extract_rows_from_search_response(
     keyword: str,
+    data: dict[str, Any],
     *,
-    api_key: str,
-    amazon_domain: str,
     associate_tag: str | None,
-    deadline: date,
+    delivery_cutoff: date,
     min_rating: float,
-    number_of_results: int,
-    include_products_count: int,
+    prime_only: bool,
     default_year: int,
-    extra_params: dict[str, str],
 ) -> list[Row]:
-    data = fetch_search_with_products(
-        api_key,
-        keyword,
-        amazon_domain,
-        number_of_results,
-        include_products_count,
-        associate_tag,
-        extra_params,
-    )
     results = data.get("search_results") or []
     rows: list[Row] = []
 
@@ -348,12 +353,14 @@ def process_keyword(
             continue
         if not is_in_stock(product):
             continue
+        if prime_only and not product_prime(product, hit):
+            continue
         rating = product_rating(product, hit)
-        if not (rating > min_rating):
+        if rating < min_rating:
             continue
         earliest, _ = earliest_delivery_date(product, default_year)
-        # Chấp nhận giao đến hết `deadline`; loại nếu ngày giao sớm nhất sau deadline (>= ngày kế tiếp).
-        if earliest is None or earliest > deadline:
+        # Giao on/before cutoff (vd 10/05/2026): bỏ qua nếu không parse được hoặc sau cutoff.
+        if earliest is None or earliest > delivery_cutoff:
             continue
 
         asin = product.get("asin") or hit.get("asin")
@@ -363,16 +370,17 @@ def process_keyword(
         if not isinstance(title, str):
             title = str(title)
         price = product_price_raw(product, hit)
+        asin_s = asin.strip()
 
         rows.append(
             Row(
                 keyword=keyword,
                 title=title.strip(),
-                asin=asin.strip(),
+                asin=asin_s,
                 price=price,
                 price_value=parse_price_value(price),
-                link=listing_product_url(asin.strip(), associate_tag),
-                short_url=short_product_url(asin.strip(), associate_tag),
+                link=canonical_dp_url(asin_s),
+                short_url=short_product_url(asin_s, associate_tag),
                 image=product_image(product, hit),
                 rating=rating,
                 is_prime=product_prime(product, hit),
@@ -382,6 +390,53 @@ def process_keyword(
 
     rows.sort(key=lambda x: (not x.is_prime, -x.rating, x.delivery_min or date.max))
     return rows
+
+
+def process_keyword(
+    keyword: str,
+    *,
+    api_key: str,
+    amazon_domain: str,
+    associate_tag: str | None,
+    delivery_cutoff: date,
+    min_rating: float,
+    prime_only: bool,
+    number_of_results: int,
+    include_products_count: int,
+    default_year: int,
+    extra_params: dict[str, str],
+    max_search_pages: int,
+    per_keyword_limit: int,
+) -> list[Row]:
+    acc: list[Row] = []
+    for page in range(1, max_search_pages + 1):
+        data = fetch_search_with_products(
+            api_key,
+            keyword,
+            amazon_domain,
+            number_of_results,
+            include_products_count,
+            associate_tag,
+            extra_params,
+            page=page,
+        )
+        batch = extract_rows_from_search_response(
+            keyword,
+            data,
+            associate_tag=associate_tag,
+            delivery_cutoff=delivery_cutoff,
+            min_rating=min_rating,
+            prime_only=prime_only,
+            default_year=default_year,
+        )
+        acc.extend(batch)
+        merged = merge_to_top(acc, 9999)
+        if len(merged) >= max(per_keyword_limit * 3, 48):
+            break
+        results = data.get("search_results") or []
+        if not results:
+            break
+    return acc
 
 
 def merge_to_top(rows: list[Row], limit: int) -> list[Row]:
@@ -402,24 +457,88 @@ def merge_to_top(rows: list[Row], limit: int) -> list[Row]:
     return out[:limit]
 
 
-def write_products_catalog(path: Path, rows: list[Row]) -> None:
+def row_to_product_dict(r: Row) -> dict[str, Any]:
+    return {
+        "keyword": r.keyword,
+        "title": r.title,
+        "asin": r.asin,
+        "price": r.price,
+        "priceValue": r.price_value,
+        "rating": r.rating,
+        "is_prime": r.is_prime,
+        "image": r.image,
+        "link": canonical_dp_url(r.asin),
+        "earliest_delivery": r.delivery_min.isoformat() if r.delivery_min else None,
+    }
+
+
+def pad_category_rows(
+    primary: list[Row],
+    limit: int,
+    global_pool: list[Row],
+    keyword_label: str,
+    associate_tag: str | None,
+) -> list[Row]:
+    """Lấp ô trống: thêm SKU từ pool toàn campaign (Mother's Day), giữ đúng limit."""
+    seen = {r.asin for r in primary}
+    out: list[Row] = list(primary)
+    for r in global_pool:
+        if len(out) >= limit:
+            break
+        if r.asin in seen:
+            continue
+        seen.add(r.asin)
+        out.append(
+            Row(
+                keyword=keyword_label,
+                title=r.title,
+                asin=r.asin,
+                price=r.price,
+                price_value=r.price_value,
+                link=canonical_dp_url(r.asin),
+                short_url=short_product_url(r.asin, associate_tag),
+                image=r.image,
+                rating=r.rating,
+                is_prime=r.is_prime,
+                delivery_min=r.delivery_min,
+            )
+        )
+    return out[:limit]
+
+
+def write_products_catalog(
+    path: Path,
+    *,
+    category_rows: list[tuple[str, str, list[Row]]],
+    meta: dict[str, Any],
+) -> None:
+    """category_rows: (slug, search_query, rows) per từ khóa."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    categories_out: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
+    seen_asin: set[str] = set()
+
+    for slug, search_query, rows in category_rows:
+        dicts = [row_to_product_dict(r) for r in rows]
+        categories_out.append(
+            {
+                "slug": slug,
+                "search_query": search_query,
+                "product_count": len(dicts),
+                "products": dicts,
+            }
+        )
+        for d in dicts:
+            a = d["asin"]
+            if a not in seen_asin:
+                seen_asin.add(a)
+                flat.append(d)
+
     payload = {
         "updatedAt": datetime.now(timezone.utc).isoformat(),
-        "products": [
-            {
-                "keyword": r.keyword,
-                "title": r.title,
-                "asin": r.asin,
-                "price": r.price,
-                "priceValue": r.price_value,
-                "rating": r.rating,
-                "is_prime": r.is_prime,
-                "image": r.image,
-                "link": r.link,
-            }
-            for r in rows
-        ],
+        "meta": meta,
+        "categories": categories_out,
+        "products": flat,
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -428,18 +547,24 @@ def main() -> int:
     _ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description="Rainforest Amazon search + landing catalog.")
     ap.add_argument(
-        "--deadline",
+        "--delivery-cutoff",
         default="2026-05-10",
-        help="Ngày giao muộn nhất được chấp nhận (YYYY-MM-DD). Giao sau ngày này bị loại. Mặc định: 2026-05-10.",
+        help="Chỉ giữ SKU có ngày giao sớm nhất on/before ngày này (YYYY-MM-DD). Mặc định: 2026-05-10.",
     )
-    ap.add_argument("--min-rating", type=float, default=4.5, help="Rating phải LỚN HƠN giá trị này.")
+    ap.add_argument("--min-rating", type=float, default=4.0, help="Rating tối thiểu (>=). Mặc định 4.0.")
+    ap.add_argument(
+        "--prime-only",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Chỉ lấy sản phẩm Prime (mặc định: có). Dùng --no-prime-only để tắt.",
+    )
     ap.add_argument("--amazon-domain", default="amazon.com")
     ap.add_argument("--number-of-results", type=int, default=48)
     ap.add_argument(
         "--include-products-count",
         type=int,
-        default=12,
-        help="Số kết quả search kèm chi tiết product (credit thêm).",
+        default=20,
+        help="Số kết quả search kèm chi tiết product / từ khóa (credit thêm). Nên >= per-keyword-limit.",
     )
     ap.add_argument("--default-year", type=int, default=2026)
     ap.add_argument("--associate-tag", default=os.environ.get("AMAZON_ASSOCIATE_TAG", "anvopro-20"))
@@ -450,10 +575,16 @@ def main() -> int:
         help="File catalog cho Next.js (mặc định data/products.json).",
     )
     ap.add_argument(
-        "--grid-size",
+        "--per-keyword-limit",
         type=int,
         default=16,
-        help="Số sản phẩm tối đa ghi vào catalog sau khi gộp ASIN.",
+        help="Số sản phẩm tối đa mỗi từ khóa (sau dedupe ASIN; thiếu sẽ lấp từ pool campaign).",
+    )
+    ap.add_argument(
+        "--max-search-pages",
+        type=int,
+        default=5,
+        help="Rainforest search: lặp tham số page=1..N (mỗi trang có include_products_count). Mặc định 5.",
     )
     ap.add_argument(
         "--cache-hours",
@@ -479,7 +610,7 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    deadline = date.fromisoformat(args.deadline)
+    delivery_cutoff = date.fromisoformat(args.delivery_cutoff)
     api_key = os.environ.get("RAINFOREST_API_KEY", "").strip()
     products_path: Path = args.products_json
 
@@ -507,58 +638,106 @@ def main() -> int:
         extra_params[k.strip()] = v.strip()
 
     keywords = DEFAULT_KEYWORDS
-    all_rows: list[Row] = []
+    category_raw: list[tuple[str, str, list[Row]]] = []
+    mega_for_pool: list[Row] = []
 
     print(
-        f"Lọc: in_stock, rating > {args.min_rating}, "
-        f"ngày giao sớm nhất ≤ {deadline.isoformat()} (loại nếu sau ngày đó). "
-        f"Rainforest: include_products_count={args.include_products_count}.\n",
+        f"Lọc: in_stock, Prime={'Y' if args.prime_only else 'N'}, rating>={args.min_rating}, "
+        f"earliest_delivery <= {delivery_cutoff.isoformat()}. "
+        f"{args.per_keyword_limit}/từ khóa (lấp từ pool nếu thiếu). "
+        f"Rainforest pages=1..{args.max_search_pages}, include_products_count={args.include_products_count}.\n",
         file=sys.stderr,
     )
 
     for kw in keywords:
+        slug = keyword_slug(kw)
         try:
             rows = process_keyword(
                 kw,
                 api_key=api_key,
                 amazon_domain=args.amazon_domain,
                 associate_tag=args.associate_tag or None,
-                deadline=deadline,
+                delivery_cutoff=delivery_cutoff,
                 min_rating=args.min_rating,
+                prime_only=args.prime_only,
                 number_of_results=args.number_of_results,
                 include_products_count=args.include_products_count,
                 default_year=args.default_year,
                 extra_params=extra_params,
+                max_search_pages=args.max_search_pages,
+                per_keyword_limit=args.per_keyword_limit,
             )
         except requests.HTTPError as e:
-            print(f"[{kw}] HTTP lỗi: {e}", file=sys.stderr)
+            print(f"[{kw}] HTTP lỗi: {_redact_api_key_in_text(str(e))}", file=sys.stderr)
             if e.response is not None:
                 print(e.response.text[:500], file=sys.stderr)
+            category_raw.append((slug, kw, []))
             continue
         except requests.RequestException as e:
             print(f"[{kw}] Lỗi mạng: {e}", file=sys.stderr)
+            category_raw.append((slug, kw, []))
             continue
-        all_rows.extend(rows)
-        print(f"[{kw}] {len(rows)} sản phẩm thỏa điều kiện.", file=sys.stderr)
+        merged_kw = merge_to_top(rows, 9999)
+        category_raw.append((slug, kw, merged_kw))
+        mega_for_pool.extend(merged_kw)
+        print(
+            f"[{kw}] {len(merged_kw)} SKU sau lọc (trước cắt {args.per_keyword_limit} + lấp).",
+            file=sys.stderr,
+        )
 
-    top = merge_to_top(all_rows, args.grid_size)
-    write_products_catalog(products_path, top)
-    print(f"\nĐã ghi {len(top)} sản phẩm → {products_path}", file=sys.stderr)
+    pool_sorted = merge_to_top(mega_for_pool, 9999)
+    category_rows: list[tuple[str, str, list[Row]]] = []
+    all_rows: list[Row] = []
+    tag = args.associate_tag or None
+    for slug, kw, rows in category_raw:
+        top_kw = merge_to_top(rows, args.per_keyword_limit)
+        padded = pad_category_rows(top_kw, args.per_keyword_limit, pool_sorted, kw, tag)
+        category_rows.append((slug, kw, padded))
+        all_rows.extend(padded)
 
-    headers = ["Keyword", "Title", "ASIN", "Price", "Short URL", "Rating", "Prime", "Delivery"]
-    table = [
-        [
-            r.keyword,
-            (r.title[:55] + "...") if len(r.title) > 57 else r.title,
-            r.asin,
-            r.price,
-            r.short_url,
-            f"{r.rating:.1f}",
-            "Y" if r.is_prime else "",
-            r.delivery_min.isoformat() if r.delivery_min else "",
-        ]
-        for r in top
-    ]
+    total_products = sum(len(t[2]) for t in category_rows)
+    if total_products == 0:
+        print(
+            "Không lấy được SKU nào — không ghi đè products.json (giữ bản cũ). "
+            "Kiểm tra RAINFOREST_API_KEY trong .env.local, credit (402), và bộ lọc.",
+            file=sys.stderr,
+        )
+        return 2
+
+    meta = {
+        "keywords": keywords,
+        "per_keyword_limit": args.per_keyword_limit,
+        "min_rating": args.min_rating,
+        "prime_only": args.prime_only,
+        "delivery_cutoff": delivery_cutoff.isoformat(),
+        "delivery_rule": "earliest_delivery <= delivery_cutoff (on or before)",
+        "max_search_pages": args.max_search_pages,
+        "canonical_associate_tag": CANONICAL_ASSOCIATE_TAG,
+    }
+    write_products_catalog(products_path, category_rows=category_rows, meta=meta)
+    flat_count = len({r.asin for r in all_rows})
+    print(
+        f"\nĐã ghi {len(category_rows)} danh mục, {sum(len(t[2]) for t in category_rows)} SKU tổng (theo từ khóa), "
+        f"{flat_count} SKU unique trong products[] → {products_path}",
+        file=sys.stderr,
+    )
+
+    headers = ["Category", "Title", "ASIN", "Price", "Short URL", "Rating", "Prime", "Delivery"]
+    table: list[list[str]] = []
+    for slug, kw, rows in category_rows:
+        for r in rows:
+            table.append(
+                [
+                    slug,
+                    (r.title[:50] + "...") if len(r.title) > 52 else r.title,
+                    r.asin,
+                    r.price,
+                    r.short_url,
+                    f"{r.rating:.1f}",
+                    "Y" if r.is_prime else "",
+                    r.delivery_min.isoformat() if r.delivery_min else "",
+                ]
+            )
     if table:
         print(tabulate(table, headers=headers, tablefmt="github"))
     else:
@@ -581,7 +760,7 @@ def main() -> int:
             for r in all_rows
         ]
         Path(args.json_out).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"Đã ghi {len(payload)} hàng (full) -> {args.json_out}", file=sys.stderr)
+        print(f"Đã ghi {len(payload)} hàng (per-keyword top) -> {args.json_out}", file=sys.stderr)
 
     return 0
 

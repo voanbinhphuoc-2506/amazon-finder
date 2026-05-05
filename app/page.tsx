@@ -2,10 +2,11 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { Suspense } from "react";
 import LandingProductGrid from "./components/LandingProductGrid";
+import { selectMotherDayAdsGrid } from "./lib/landingAdsCatalog";
 import type { LandingCatalogFile } from "./lib/landingCatalog";
 import HomeClient from "./home-client";
 
-/** Đọc catalog mỗi request để `scripts/amazon_rainforest_search.py` cập nhật file không cần build lại (dev). */
+/** Đọc catalog mỗi request để cập nhật `data/products.json` không cần build lại (dev). */
 export const dynamic = "force-dynamic";
 
 function loadLandingCatalog(): LandingCatalogFile {
@@ -22,14 +23,34 @@ function FeaturedSectionFallback() {
   );
 }
 
-export default function HomePage() {
+function readAdsQuery(sp: Record<string, string | string[] | undefined>): string | null {
+  const raw = sp.q;
+  if (raw == null) {
+    return null;
+  }
+  const s = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof s !== "string" || !s.trim()) {
+    return null;
+  }
+  return s.trim().slice(0, 200);
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const adsQuery = readAdsQuery(sp);
   const landingCatalog = loadLandingCatalog();
+  const gridProducts = selectMotherDayAdsGrid(landingCatalog, adsQuery);
+
   return (
     <Suspense fallback={<HomeFallback />}>
       <HomeClient
         campaignSections={
           <Suspense fallback={<FeaturedSectionFallback />}>
-            <LandingProductGrid products={landingCatalog.products} />
+            <LandingProductGrid products={gridProducts} />
           </Suspense>
         }
       />
