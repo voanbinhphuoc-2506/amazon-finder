@@ -2,12 +2,24 @@
   "updatedAt": "2026-05-05T03:27:34.796147+00:00",
   "products": [
     {
+      "keyword": "Smart Home",
+      "category": "video-doorbell",
+      "title": "Ring Battery Doorbell, Home or business security with Head-to-Toe video, Live View with Two-Way Talk, and Motion Detection & Alerts, Venetian Bronze",
+      "asin": "B0BZWRLRLK",
+      "price": "$59.99",
+      "priceValue": 59.99,
+      "rating": 4.6,
+      "is_prime": true,
+      "image": "https://m.media-amazon.com/images/I/71jjXaL-MZL._AC_SX679_.jpg",
+      "link": "https://www.amazon.com/dp/B0BZWRLRLK?tag=anvopro-20"
+    },
+    {
       "keyword": "Robot Vacuum",
       "title": "Bagotte Robot Vacuum and Mop Combo, 6000Pa Robotic Vacuum with Mapping, Self-Emptying Station for 90 Days Hands-Free Cleaning, LiDAR Navigation,Wi-Fi/App/Alexa Voice Control, for Carpets Hard Floors Ivory White",
       "asin": "B0GVYLQW5R",
       "price": "$799.00",
-      "priceValue": 799.0,
-      "rating": 5.0,
+      "priceValue": 799,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71RVfdO5UkL.jpg",
       "link": "https://www.amazon.com/dp/B0GVYLQW5R?tag=anvopro-20"
@@ -18,7 +30,7 @@
       "asin": "B0GQC4GKQR",
       "price": "$109.99",
       "priceValue": 109.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71IFnkQ8PNL.jpg",
       "link": "https://www.amazon.com/dp/B0GQC4GKQR?tag=anvopro-20"
@@ -29,7 +41,7 @@
       "asin": "B0GXX3N5TF",
       "price": "$89.99",
       "priceValue": 89.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/61xf+Solg0L.jpg",
       "link": "https://www.amazon.com/dp/B0GXX3N5TF?tag=anvopro-20"
@@ -40,7 +52,7 @@
       "asin": "B0GBX5HVDL",
       "price": "$269.99",
       "priceValue": 269.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/61t+vUBwMuL.jpg",
       "link": "https://www.amazon.com/dp/B0GBX5HVDL?tag=anvopro-20"
@@ -51,7 +63,7 @@
       "asin": "B0FP2CBK8H",
       "price": "$47.49",
       "priceValue": 47.49,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/614wGZPhIfL.jpg",
       "link": "https://www.amazon.com/dp/B0FP2CBK8H?tag=anvopro-20"
@@ -62,7 +74,7 @@
       "asin": "B0GVHCZDWB",
       "price": "$99.90",
       "priceValue": 99.9,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71uAoMye5LL.jpg",
       "link": "https://www.amazon.com/dp/B0GVHCZDWB?tag=anvopro-20"
@@ -73,7 +85,7 @@
       "asin": "B0GHQP7HPF",
       "price": "$99.99",
       "priceValue": 99.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71Tb9lLoRnL.jpg",
       "link": "https://www.amazon.com/dp/B0GHQP7HPF?tag=anvopro-20"
@@ -84,7 +96,7 @@
       "asin": "B0GTTYX81Z",
       "price": "$34.99",
       "priceValue": 34.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71366-r-06L.jpg",
       "link": "https://www.amazon.com/dp/B0GTTYX81Z?tag=anvopro-20"
@@ -95,7 +107,7 @@
       "asin": "B0GKFTPZVM",
       "price": "$109.99",
       "priceValue": 109.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71SqOxMd5yL.jpg",
       "link": "https://www.amazon.com/dp/B0GKFTPZVM?tag=anvopro-20"
@@ -106,7 +118,7 @@
       "asin": "B0GXDYR478",
       "price": "$79.99",
       "priceValue": 79.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/81wx0VkcQKL.jpg",
       "link": "https://www.amazon.com/dp/B0GXDYR478?tag=anvopro-20"
@@ -117,7 +129,7 @@
       "asin": "B0GSTXW229",
       "price": "$109.71",
       "priceValue": 109.71,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71hXA1+C4kL.jpg",
       "link": "https://www.amazon.com/dp/B0GSTXW229?tag=anvopro-20"
@@ -128,7 +140,7 @@
       "asin": "B0GXTZZDHS",
       "price": "$238.99",
       "priceValue": 238.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/61j6ZICD3HL.jpg",
       "link": "https://www.amazon.com/dp/B0GXTZZDHS?tag=anvopro-20"
@@ -139,7 +151,7 @@
       "asin": "B0GTQDXD2M",
       "price": "$99.99",
       "priceValue": 99.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/61025zFJnBL.jpg",
       "link": "https://www.amazon.com/dp/B0GTQDXD2M?tag=anvopro-20"
@@ -150,7 +162,7 @@
       "asin": "B0GC4MRXK1",
       "price": "$149.99",
       "priceValue": 149.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71tYMfNc1CL.jpg",
       "link": "https://www.amazon.com/dp/B0GC4MRXK1?tag=anvopro-20"
@@ -161,7 +173,7 @@
       "asin": "B0GSFCRSFG",
       "price": "$299.99",
       "priceValue": 299.99,
-      "rating": 5.0,
+      "rating": 5,
       "is_prime": true,
       "image": "https://m.media-amazon.com/images/I/71bfW1YmzxL.jpg",
       "link": "https://www.amazon.com/dp/B0GSFCRSFG?tag=anvopro-20"
