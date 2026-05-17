@@ -6,19 +6,23 @@ import { selectMotherDayAdsGrid } from "./lib/landingAdsCatalog";
 import type { LandingCatalogFile } from "./lib/landingCatalog";
 import HomeClient from "./home-client";
 
-/** Đọc catalog mỗi request để cập nhật `data/products.json` không cần build lại (dev). */
-export const dynamic = "force-dynamic";
+/** Static mode: chỉ đọc từ `data/products.json`, không gọi API runtime. */
+export const dynamic = "force-static";
 
 function loadLandingCatalog(): LandingCatalogFile {
   const p = join(process.cwd(), "data", "products.json");
   const raw = readFileSync(p, "utf8");
-  return JSON.parse(raw) as LandingCatalogFile;
+  const parsed = JSON.parse(raw) as LandingCatalogFile | LandingCatalogFile["products"];
+  if (Array.isArray(parsed)) {
+    return { products: parsed };
+  }
+  return parsed;
 }
 
 function FeaturedSectionFallback() {
   return (
     <div className="rounded-3xl border border-rose-100/80 bg-gradient-to-br from-white to-rose-50/30 p-8 text-center text-sm text-emerald-700">
-      Loading featured picks…
+      Curating gift picks...
     </div>
   );
 }
