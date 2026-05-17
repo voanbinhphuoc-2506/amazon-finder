@@ -46,11 +46,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Product Research Tool | SmartWorkHacks",
+    default: "Smart Home Gadgets & Decor | SmartWorkHacks",
     template: `%s | ${COMPANY_DISPLAY_NAME}`,
   },
   description:
-    "Browse public Amazon.com marketplace listings with filters for price and customer ratings. Independent research tool—not affiliated with Amazon.",
+    "Curated smart home gadgets and decor—hand-picked Amazon listings for connected living. Independent site—not affiliated with Amazon.",
   icons: {
     apple: "/apple-touch-icon.png",
     icon: [

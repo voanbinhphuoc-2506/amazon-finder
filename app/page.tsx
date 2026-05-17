@@ -22,7 +22,7 @@ function loadLandingCatalog(): LandingCatalogFile {
 function FeaturedSectionFallback() {
   return (
     <div className="rounded-3xl border border-rose-100/80 bg-gradient-to-br from-white to-rose-50/30 p-8 text-center text-sm text-emerald-700">
-      Curating gift picks...
+      Loading smart home picks...
     </div>
   );
 }
