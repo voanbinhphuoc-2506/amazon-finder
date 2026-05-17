@@ -8,9 +8,6 @@ import {
 /** Associates tag — link DP chuẩn (không dùng URL thô từ API). */
 export const LANDING_ADS_ASSOCIATE_TAG = "anvopro-20";
 
-/** Giao trước hoặc đúng ngày 10/05/2026 (cuối ngày UTC). */
-const DELIVERY_LAST_MS = Date.parse("2026-05-10T23:59:59.999Z");
-
 export function buildAmazonImmortalDpUrl(asin: string): string {
   const a = asin.trim();
   if (!a) {
@@ -39,7 +36,7 @@ function tokenizeForMatch(normalized: string): string[] {
 }
 
 function productHaystack(p: LandingCatalogProduct): string {
-  return `${p.keyword} ${p.title}`.toLowerCase();
+  return `${p.keyword ?? ""} ${p.category ?? ""} ${p.title}`.toLowerCase();
 }
 
 export function productMatchesAdsQuery(p: LandingCatalogProduct, normalizedQuery: string): boolean {
@@ -51,17 +48,31 @@ export function productMatchesAdsQuery(p: LandingCatalogProduct, normalizedQuery
   return tokens.every((t) => hay.includes(t));
 }
 
-/** earliest_delivery ISO; thiếu field → vẫn hiển thị (catalog cũ). */
-export function passesAdsDeliveryDeadline(p: LandingCatalogProduct): boolean {
-  const raw = p.earliest_delivery;
-  if (raw == null || String(raw).trim() === "") {
-    return true;
+/** Static mode: bỏ qua bộ lọc ngày giao hoàn toàn. */
+export function passesAdsDeliveryDeadline(_product: LandingCatalogProduct): boolean {
+  void _product;
+  return true;
+}
+
+function normalizePriceValue(p: LandingCatalogProduct): number {
+  if (typeof p.priceValue === "number" && Number.isFinite(p.priceValue)) {
+    return p.priceValue;
   }
-  const ms = Date.parse(String(raw));
-  if (Number.isNaN(ms)) {
-    return true;
+  if (typeof p.price === "number" && Number.isFinite(p.price)) {
+    return p.price;
   }
-  return ms <= DELIVERY_LAST_MS;
+  if (typeof p.price === "string") {
+    const parsed = Number(p.price.replace(/[^\d.]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function normalizePriceText(p: LandingCatalogProduct): string {
+  if (typeof p.price === "number") {
+    return `$${p.price.toFixed(2)}`;
+  }
+  return p.price || "N/A";
 }
 
 export function compareLandingCatalog(a: LandingCatalogProduct, b: LandingCatalogProduct): number {
@@ -71,7 +82,7 @@ export function compareLandingCatalog(a: LandingCatalogProduct, b: LandingCatalo
   if (a.is_prime !== b.is_prime) {
     return (b.is_prime ? 1 : 0) - (a.is_prime ? 1 : 0);
   }
-  return b.priceValue - a.priceValue;
+  return normalizePriceValue(b) - normalizePriceValue(a);
 }
 
 export function pickBestSellersFromCatalog(
@@ -81,9 +92,27 @@ export function pickBestSellersFromCatalog(
   return [...products].sort(compareLandingCatalog).slice(0, limit);
 }
 
+/** Ghim `featured` trước, phần còn lại lấy theo sort best-seller. */
+function mergeFeaturedIntoGrid(
+  ranked: LandingCatalogProduct[],
+  pool: LandingCatalogProduct[],
+  limit: number
+): LandingCatalogProduct[] {
+  const featured = pool.filter((p) => p.featured);
+  const featuredAsins = new Set(featured.map((p) => p.asin));
+  const rest = ranked.filter((p) => !featuredAsins.has(p.asin));
+  const cap = Math.max(0, limit - featured.length);
+  const merged = [...featured.map(withImmortalListingLink), ...rest.slice(0, cap).map(withImmortalListingLink)];
+  return merged.slice(0, limit);
+}
+
 export function withImmortalListingLink(p: LandingCatalogProduct): LandingCatalogProduct {
   return {
     ...p,
+    keyword: p.keyword ?? p.category ?? "Featured",
+    price: normalizePriceText(p),
+    priceValue: normalizePriceValue(p),
+    is_prime: p.is_prime ?? true,
     link: buildAmazonImmortalDpUrl(p.asin),
   };
 }
@@ -115,13 +144,11 @@ function findCategoryForQuery(
   return null;
 }
 
-/** Kho quà Mother’s Day: mọi SKU trong JSON đã qua lọc ngày, dedupe, sort. */
+/** Kho sản phẩm static từ JSON. */
 function motherDayPool(catalog: LandingCatalogFile): LandingCatalogProduct[] {
-  const fromFlat = (catalog.products ?? []).filter(passesAdsDeliveryDeadline);
-  const fromCats = (catalog.categories ?? []).flatMap((c) =>
-    (c.products ?? []).filter(passesAdsDeliveryDeadline)
-  );
-  return dedupeByAsin([...fromFlat, ...fromCats]).sort(compareLandingCatalog);
+  const fromFlat = (catalog.products ?? []).filter((p) => Boolean(p?.asin));
+  const fromCats = (catalog.categories ?? []).flatMap((c) => (c.products ?? []).filter((p) => Boolean(p?.asin)));
+  return dedupeByAsin([...fromFlat, ...fromCats]).map(withImmortalListingLink).sort(compareLandingCatalog);
 }
 
 /** Đủ đúng 16 ô: lấy từ danh mục khớp `q`, lấp từ kho chung (quà MD khác). */
@@ -130,7 +157,7 @@ function padToSixteen(
   pool: LandingCatalogProduct[]
 ): LandingCatalogProduct[] {
   const seen = new Set(primary.map((p) => p.asin));
-  const out = primary.map(withImmortalListingLink);
+  const out = [...primary];
   for (const p of pool) {
     if (out.length >= LANDING_GRID_SLOTS) {
       break;
@@ -139,8 +166,17 @@ function padToSixteen(
       continue;
     }
     seen.add(p.asin);
-    out.push(withImmortalListingLink(p));
+    out.push(p);
   }
+
+  // Khi tổng SKU unique < 16, lặp vòng từ danh sách hiện có để vẫn đủ 16 ô.
+  const refillSource = out.length > 0 ? out : pool;
+  let i = 0;
+  while (out.length < LANDING_GRID_SLOTS && refillSource.length > 0) {
+    out.push(refillSource[i % refillSource.length]);
+    i += 1;
+  }
+
   return out.slice(0, LANDING_GRID_SLOTS);
 }
 
@@ -155,21 +191,31 @@ export function selectMotherDayAdsGrid(
   const pool = motherDayPool(catalog);
 
   if (rawQuery == null || !rawQuery.trim()) {
-    return pickBestSellersFromCatalog(pool, LANDING_GRID_SLOTS).map(withImmortalListingLink);
+    const ranked = pickBestSellersFromCatalog(pool, LANDING_GRID_SLOTS);
+    return mergeFeaturedIntoGrid(ranked, pool, LANDING_GRID_SLOTS);
   }
 
   const normalized = normalizeAdsQueryParam(rawQuery);
   const cat = findCategoryForQuery(catalog, normalized);
+  const querySlug = normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   let primary: LandingCatalogProduct[] = [];
   if (cat?.products?.length) {
     primary = cat.products
       .filter(passesAdsDeliveryDeadline)
+      .map(withImmortalListingLink)
       .sort(compareLandingCatalog)
       .slice(0, LANDING_GRID_SLOTS);
   } else {
-    primary = pool.filter((p) => productMatchesAdsQuery(p, normalized)).slice(0, LANDING_GRID_SLOTS);
+    primary = pool
+      .filter((p) => {
+        const byCategory = (p.category ?? "").toLowerCase() === querySlug;
+        if (byCategory) return true;
+        return productMatchesAdsQuery(p, normalized);
+      })
+      .slice(0, LANDING_GRID_SLOTS);
   }
 
-  return padToSixteen(primary, pool);
+  const padded = padToSixteen(primary, pool);
+  return mergeFeaturedIntoGrid(padded, pool, LANDING_GRID_SLOTS);
 }
